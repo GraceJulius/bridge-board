@@ -102,7 +102,7 @@ def _parse_json(text: str) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# Feature 1: flyer photo -> event
+# Step 1: flyer photo -> structured event (vision)
 # ---------------------------------------------------------------------------
 
 def extract_event(image_bytes: bytes, mime: str = "image/jpeg") -> dict:
@@ -115,70 +115,94 @@ Extract the event details. Return ONLY a JSON object with these keys:
   "location": string or "",
   "organizer": string or "",
   "contact": email, phone, or website shown on the flyer, or "",
-  "raw_text": the main text of the flyer in one short paragraph
+  "raw_text": all the meaningful text on the flyer, including any health or medical claims, in one paragraph,
+  "confidence": a number from 0 to 1 for how clearly you could read the flyer,
+  "missing": list of field names you could not find on the flyer
 }
 Only use information visible on the flyer. Use "" for anything missing. Do not guess."""
     return _parse_json(_call_llm(prompt, image_bytes, mime))
 
 
 # ---------------------------------------------------------------------------
-# Feature 2: tag + translate
+# Step 2: classify, translate, and run the health trust check
 # ---------------------------------------------------------------------------
 
 def tag_and_translate(event: dict) -> dict:
     prompt = f"""Here is a community event near Lincoln University in Oxford, Pennsylvania:
 {json.dumps(event, ensure_ascii=False)}
 
-Return ONLY a JSON object:
+Do three things and return ONLY a JSON object:
 {{
   "category": one of {CATEGORIES},
   "summary_en": a friendly 2 sentence summary in English,
   "summary_es": the same summary in natural Spanish,
-  "how_students_can_help": one sentence on how a college student could help or join
-}}"""
+  "how_students_can_help": one sentence on how a college student could help or join,
+  "trust": {{
+    "status": "aligned" | "needs_review" | "no_health_claims",
+    "note": one sentence explaining your judgment,
+    "official_source": the most relevant official source to check, e.g. "CDC: Measles vaccination" or ""
+  }}
+}}
+
+Rules for "trust" (this protects the community from health misinformation):
+- "no_health_claims" if the flyer makes no medical or health claims.
+- "aligned" only if every health claim matches established guidance from the CDC, the
+  Pennsylvania Department of Health, or the Chester County Health Department.
+- "needs_review" if any claim contradicts that guidance (for example discouraging vaccines,
+  or promoting unproven cures), is exaggerated, or you are not sure. When in doubt, choose needs_review.
+- Never invent claims that are not on the flyer."""
     return _parse_json(_call_llm(prompt))
 
 
 # ---------------------------------------------------------------------------
-# Feature 4: "I'm overwhelmed" mode
+# Step 3: "I'm overwhelmed" planner + matcher
 # ---------------------------------------------------------------------------
 
 def make_plan(brain_dump: str, events: list[dict]) -> dict:
     board = [
-        {k: e.get(k, "") for k in ("id", "title", "date", "category", "organizer", "summary_en")}
+        {k: e.get(k, "") for k in ("id", "title", "date", "category", "organizer",
+                                    "summary_en", "how_students_can_help")}
         for e in events
+        if (e.get("trust") or {}).get("status") != "needs_review"  # never route students to flagged events
     ]
     prompt = f"""A Lincoln University student wants to improve the relationship between
 Lincoln and the Oxford, PA community but feels overwhelmed. Here is their brain dump:
 
 \"\"\"{brain_dump}\"\"\"
 
-Here are real events currently on the community board:
+Here are verified events currently on the community board:
 {json.dumps(board, ensure_ascii=False)}
 
 Help them get unstuck. Return ONLY a JSON object:
 {{
-  "themes": [list of 2 to 4 short themes you see in their ideas],
+  "themes": [2 to 4 short themes you hear in their ideas],
   "ranked_ideas": [
-    {{"idea": short text, "effort": "low"|"medium"|"high", "impact": "low"|"medium"|"high", "why": one sentence}}
+    {{"idea": short label (max 6 words), "effort": 1-5, "impact": 1-5, "why": one sentence}}
   ],
   "this_week": one concrete action they can take in the next 7 days,
-  "linked_event_id": the id of the board event that best fits this_week, or "" if none fit,
+  "matches": [
+    {{"event_id": id from the board, "fit": 0-100, "reason": one sentence tying the event to their ideas}}
+  ],
   "encouragement": one short, warm, genuine sentence (no cliches)
 }}
-Rank ideas with the best impact for the least effort first. Keep the plan small and doable."""
-    return _parse_json(_call_llm(prompt, max_tokens=1500))
+- ranked_ideas: every distinct idea from the brain dump (3 to 6), best impact for least effort first.
+- matches: the top 3 board events for this student, best first. Only use ids that exist.
+- Keep the plan small and doable."""
+    plan = _parse_json(_call_llm(prompt, max_tokens=1800))
+    valid = {e["id"] for e in board}
+    plan["matches"] = [m for m in plan.get("matches", []) if m.get("event_id") in valid]
+    return plan
 
 
 # ---------------------------------------------------------------------------
-# Feature 5: outreach drafter
+# Step 4: outreach drafter
 # ---------------------------------------------------------------------------
 
 def draft_outreach(event: dict, plan: dict | None = None, student_name: str = "Alex") -> str:
     action = (plan or {}).get("this_week", "volunteer at or support this event")
     prompt = f"""Write a short message from {student_name}, a student at Lincoln University,
 to the organizer of this event:
-{json.dumps(event, ensure_ascii=False)}
+{json.dumps({k: v for k, v in event.items() if k != "trust"}, ensure_ascii=False)}
 
 Goal: {action}
 - Introduce yourself in one line

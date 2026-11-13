@@ -12,13 +12,14 @@ Alex is a Lincoln student who wants to help improve the relationship between Lin
 
 | Feature | How AI is used |
 |---|---|
-| 📸 **Flyer scan** | A vision model reads a photo of a flyer and extracts title, date, time, location, organizer and contact |
+| 📸 **Flyer scan** | A vision model reads a photo of a flyer and extracts title, date, time, location, organizer and contact, with a legibility score and missing fields |
 | 🏷️ **Tag + translate** | The LLM categorizes the event (Health, Volunteer, Social, Education), writes a short summary, and translates it to Spanish |
+| 🛡️ **Health trust check** | Health claims on every flyer are compared with CDC and PA Department of Health guidance. Misleading flyers are flagged and never recommended to students |
 | 📋 **Bridge Board** | All events in one filterable board with an English/Spanish toggle |
-| 🧠 **"I'm overwhelmed" mode** | The LLM groups a student's messy ideas into themes, ranks them by effort vs. impact, and links one action this week to a real board event |
+| 🧭 **"I'm overwhelmed" mode** | The LLM groups a student's messy ideas into themes, plots them on an effort vs. impact chart, picks one action for this week, and scores the best-fit verified events |
 | ✉️ **Outreach drafter** | The LLM drafts a short, human message from the student to the event organizer |
 
-**AI pipeline:** photo ➡️ vision extraction ➡️ tagging + translation ➡️ board ➡️ planning ➡️ outreach draft
+**AI pipeline:** photo ➡️ vision extraction ➡️ classify + translate + health fact-check ➡️ board ➡️ planning + matching ➡️ outreach draft
 
 ## Run it
 
@@ -29,6 +30,12 @@ streamlit run app.py
 ```
 
 Set `AI_PROVIDER` to `gemini` (free key at [aistudio.google.com/apikey](https://aistudio.google.com/apikey)), `anthropic`, or `openai` in `.env` and add the matching key. `MODEL` is optional.
+
+## Demo flyers
+
+`demo_flyers/` has two fictional flyers for a reliable live demo:
+- `clinic_flyer.png`: a vaccine clinic that should pass the trust check
+- `misleading_flyer.png`: a "natural immunity" flyer that should be flagged
 
 ## Project structure
 
@@ -42,6 +49,7 @@ data/events.json  Seed events (clearly labeled as sample data)
 ## Responsible AI
 
 - Events marked **Sample data** are placeholders for the demo, not real events
+- All flyer and model text is HTML-escaped before display, since flyers are untrusted input
 - The flyer scanner only uses what's visible on the flyer and leaves missing fields blank instead of guessing
 - No personal data about community members is collected or stored
 - For health questions, point people to official sources: Chester County Health Department, PA Department of Health, CDC
