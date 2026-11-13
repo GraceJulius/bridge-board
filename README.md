@@ -19,6 +19,12 @@ Alex is a Lincoln student who wants to help improve the relationship between Lin
 | 🧭 **"I'm overwhelmed" mode** | The LLM groups a student's messy ideas into themes, plots them on an effort vs. impact chart, picks one action for this week, and scores the best-fit verified events |
 | ✉️ **Outreach drafter** | The LLM drafts a short, human message from the student to the event organizer |
 
+| 🛡 **Fact-check card** | For a flagged flyer, AI writes a kind, bilingual "what's actually true" card with official sources, downloadable as an image to share |
+| 💬 **Ask Bridge** | Q&A in English or Spanish, answered only from the board and verified resources. Never recommends flagged events |
+| 🗺 **Community map** | Events and care locations on one map, color-coded by category, with flagged flyers marked |
+| 🌱 **Our Impact** | Students log volunteer hours; live dashboard of hours, students, and events supported |
+| ✚ **Get Help** | 911 first, always. A keyword safety guard catches emergencies before any AI runs. AI then routes people to verified local care (campus health, Public Safety, LCH Oxford, ChristianaCare West Grove ER, Chester County Hospital, Chester County Health Department) based on what's open right now. It never diagnoses |
+
 **AI pipeline:** photo ➡️ vision extraction ➡️ classify + translate + trust check (health + scams) ➡️ board ➡️ planning + matching ➡️ outreach draft
 
 ## Run it
@@ -31,6 +37,10 @@ streamlit run app.py
 
 Set `AI_PROVIDER` to `gemini` (free key at [aistudio.google.com/apikey](https://aistudio.google.com/apikey)), `anthropic`, or `openai` in `.env` and add the matching key. `MODEL` is optional.
 
+## Verified care contacts
+
+`data/resources.json` lists every care resource with its source link. Contacts were checked against official pages on Nov 13, 2026. Re-check them before relying on the app in real life.
+
 ## Demo flyers
 
 `demo_flyers/` has two fictional flyers for a reliable live demo:
@@ -41,9 +51,12 @@ Set `AI_PROVIDER` to `gemini` (free key at [aistudio.google.com/apikey](https://
 
 ```
 app.py            Streamlit UI (Board, Scan, Overwhelmed tabs)
+extras.py         Get Help, fact-check card, Ask Bridge, map, impact tracker
 ai.py             AI functions: extract_event, tag_and_translate, make_plan, draft_outreach
 store.py          JSON file storage for events
 data/events.json  Seed events (clearly labeled as sample data)
+data/resources.json  Verified care and crisis contacts
+data/impact.json  Volunteer hour log (starts with labeled sample entries)
 ```
 
 ## Responsible AI

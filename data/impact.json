@@ -1,0 +1,32 @@
+[
+  {
+    "id": "s1",
+    "student": "Sample: J.M.",
+    "event": "After-School Homework Help",
+    "category": "Education",
+    "hours": 3,
+    "note": "Math tutoring",
+    "date": "2026-11-11",
+    "is_sample": true
+  },
+  {
+    "id": "s2",
+    "student": "Sample: A.K.",
+    "event": "Community Food Drive",
+    "category": "Volunteer",
+    "hours": 2,
+    "note": "Sorted donations",
+    "date": "2026-11-08",
+    "is_sample": true
+  },
+  {
+    "id": "s3",
+    "student": "Sample: T.R.",
+    "event": "Free MMR Vaccine Clinic",
+    "category": "Health",
+    "hours": 4,
+    "note": "Bilingual check-in table",
+    "date": "2026-11-06",
+    "is_sample": true
+  }
+]

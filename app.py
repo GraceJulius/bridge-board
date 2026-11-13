@@ -13,6 +13,7 @@ import pandas as pd
 import streamlit as st
 
 import ai
+import extras
 import store
 
 st.set_page_config(page_title="Bridge Board", page_icon="🌉", layout="wide")
@@ -269,6 +270,9 @@ def event_card(event: dict, lang: str = "English", key_prefix: str = "board",
         if show_outreach and not flagged:
             with st.expander("Reach out to the organizer"):
                 outreach_box(event, None, f"{key_prefix}_{event['id']}")
+        elif show_outreach and flagged:
+            with st.expander("🛡 Help neighbors with the facts"):
+                extras.factcheck_section(event, f"{key_prefix}_{event['id']}")
 
 
 def pipeline_html(steps: list[tuple[str, str, str]]) -> str:
@@ -291,8 +295,9 @@ st.markdown(
     f"""
 <div class="bb-nav">
   <div class="bb-logo">✳ BRIDGE BOARD</div>
-  <div class="bb-navlinks"><span>Board</span><span>Scan</span><span>Plan</span><span>Trust check</span></div>
-  <div class="bb-pill">Lincoln University × Oxford, PA</div>
+  <div class="bb-navlinks"><span>Board</span><span>Scan</span><span>Plan</span><span>Ask</span><span>Impact</span><span>Get Help</span></div>
+  <div><span class="bb-pill">Lincoln University × Oxford, PA</span>
+  <a href="tel:911" class="bb-pill" style="background:#B23A2A;color:white;border-color:#B23A2A;text-decoration:none;margin-left:6px">✚ Emergency? Call 911</a></div>
 </div>
 
 <div class="bb-hero">
@@ -344,7 +349,8 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-tab_board, tab_scan, tab_plan = st.tabs(["Community Board", "Scan a Flyer", "I'm Overwhelmed"])
+tab_board, tab_scan, tab_plan, tab_ask, tab_impact, tab_help = st.tabs(
+    ["Community Board", "Scan a Flyer", "I'm Overwhelmed", "Ask Bridge", "Our Impact", "✚ Get Help"])
 
 # ---------------------------------------------------------------------------
 # Board
@@ -356,12 +362,17 @@ with tab_board:
     with c2:
         lang = st.segmented_control("Language", ["English", "Español"], default="English", key="board_lang")
     shown = [e for e in events if choice in (None, "All") or e.get("category") == choice]
+    view = st.segmented_control("View", ["Cards", "Map"], default="Cards", key="board_view",
+                                label_visibility="collapsed")
     if not shown:
         st.info("Nothing here yet. Scan a flyer to add the first one!")
-    cols = st.columns(2, gap="medium")
-    for i, ev in enumerate(shown):
-        with cols[i % 2]:
-            event_card(ev, lang or "English")
+    elif view == "Map":
+        extras.render_map(shown)
+    else:
+        cols = st.columns(2, gap="medium")
+        for i, ev in enumerate(shown):
+            with cols[i % 2]:
+                event_card(ev, lang or "English")
 
 # ---------------------------------------------------------------------------
 # Scan
@@ -545,3 +556,15 @@ with tab_plan:
                     st.markdown('<div class="bb-section">✉️ Reach out</div>', unsafe_allow_html=True)
                     outreach_box(ev, plan, "plan_main")
                     first = False
+
+# ---------------------------------------------------------------------------
+# New features
+# ---------------------------------------------------------------------------
+with tab_ask:
+    extras.render_ask(store.load_events())
+
+with tab_impact:
+    extras.render_impact(store.load_events())
+
+with tab_help:
+    extras.render_help()

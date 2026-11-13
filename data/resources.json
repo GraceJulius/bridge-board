@@ -1,0 +1,115 @@
+[
+  {
+    "id": "911",
+    "name": "Emergency: call 911",
+    "type": "emergency",
+    "phone": "911",
+    "hours": "24/7",
+    "address": "",
+    "when": "Life-threatening emergencies: trouble breathing, chest pain, severe bleeding, unconsciousness, seizure, signs of stroke, overdose.",
+    "lat": null, "lon": null,
+    "source": ""
+  },
+  {
+    "id": "988",
+    "name": "988 Suicide & Crisis Lifeline",
+    "type": "crisis",
+    "phone": "988",
+    "hours": "24/7, call or text",
+    "address": "",
+    "when": "Thoughts of suicide, a mental health crisis, or emotional distress. Free and confidential.",
+    "lat": null, "lon": null,
+    "source": "https://988lifeline.org/"
+  },
+  {
+    "id": "poison",
+    "name": "Poison Control",
+    "type": "crisis",
+    "phone": "1-800-222-1222",
+    "hours": "24/7",
+    "address": "",
+    "when": "Swallowed, inhaled, or touched something that might be poisonous, or a medication mistake.",
+    "lat": null, "lon": null,
+    "source": "https://www.poison.org/"
+  },
+  {
+    "id": "lu_public_safety",
+    "name": "Lincoln University Public Safety",
+    "type": "campus",
+    "phone": "484-365-7211",
+    "hours": "24/7",
+    "address": "International Cultural Center, 1570 Baltimore Pike, Lincoln University, PA 19352",
+    "when": "On-campus emergencies after hours and on weekends. Public Safety can arrange transport to care.",
+    "lat": 39.8087, "lon": -75.9277,
+    "source": "https://lincoln.edu/departments/health-services"
+  },
+  {
+    "id": "lu_health",
+    "name": "Lincoln University Health Services",
+    "type": "campus",
+    "phone": "484-365-7338",
+    "hours": "Mon 9 AM-8 PM; Tue-Fri 9 AM-5 PM; every other Sat 9 AM-2 PM",
+    "open_hours": {"0": [9, 20], "1": [9, 17], "2": [9, 17], "3": [9, 17], "4": [9, 17]},
+    "address": "Wellness Center, Suite 100, 1570 Baltimore Pike, Lincoln University, PA 19352",
+    "when": "Non-emergency care for Lincoln students: illness, vaccines, check-ups. Book online at lionshealth.lincoln.edu.",
+    "lat": 39.8092, "lon": -75.9285,
+    "source": "https://lionsconnect.lincoln.edu/Health/"
+  },
+  {
+    "id": "lu_counseling",
+    "name": "Lincoln University Counseling Services",
+    "type": "campus",
+    "phone": "484-365-7244",
+    "hours": "Mon-Fri 9 AM-5 PM",
+    "open_hours": {"0": [9, 17], "1": [9, 17], "2": [9, 17], "3": [9, 17], "4": [9, 17]},
+    "address": "Wellness Center, Suite 221, Lincoln University, PA 19352",
+    "when": "Free, confidential mental health support for Lincoln students.",
+    "lat": 39.8092, "lon": -75.9285,
+    "source": "https://lincoln.edu/departments/counseling-services"
+  },
+  {
+    "id": "lch_oxford",
+    "name": "LCH Health Center, Oxford",
+    "type": "clinic",
+    "phone": "610-708-1460",
+    "hours": "Call for hours",
+    "address": "303 N 3rd St, Suite 2, Oxford, PA 19363",
+    "when": "Community health center in Oxford offering acute and primary care for families and individuals.",
+    "lat": 39.7905, "lon": -75.9787,
+    "source": "https://www.lincoln.edu/student-life/health-and-wellness/counseling-services/student-mental-health-and-suicide-prevention-plan.html"
+  },
+  {
+    "id": "christiana_westgrove",
+    "name": "ChristianaCare Hospital, West Grove (ER)",
+    "type": "hospital",
+    "phone": "484-899-9930",
+    "hours": "Emergency department open 24/7",
+    "address": "1015 W Baltimore Pike, West Grove, PA 19390 (former Jennersville Hospital, off US Route 1)",
+    "when": "Nearest emergency room to Lincoln and Oxford. Treats falls, injuries, heart attacks, and strokes.",
+    "lat": 39.8197, "lon": -75.8801,
+    "source": "https://www.healthleadersmedia.com/innovation/christianacare-opens-its-first-neighborhood-hospital-west-grove"
+  },
+  {
+    "id": "chester_county_hospital",
+    "name": "Chester County Hospital (ER)",
+    "type": "hospital",
+    "phone": "610-431-5000",
+    "hours": "Emergency department open 24/7",
+    "address": "701 E Marshall St, West Chester, PA 19380",
+    "when": "Full hospital with a large emergency department and an accredited chest pain center.",
+    "lat": 39.9640, "lon": -75.5938,
+    "source": "https://www.pennmedicine.org/practices/chester-county-hospital-emergency-medicine"
+  },
+  {
+    "id": "cchd",
+    "name": "Chester County Health Department",
+    "type": "public_health",
+    "phone": "610-344-6225",
+    "hours": "Mon-Fri 8:30 AM-4:30 PM",
+    "open_hours": {"0": [8.5, 16.5], "1": [8.5, 16.5], "2": [8.5, 16.5], "3": [8.5, 16.5], "4": [8.5, 16.5]},
+    "address": "601 Westtown Rd, Suite 290, West Chester, PA 19380",
+    "when": "Vaccines including MMR, measles questions, and exposure guidance. If you think you have measles, call them BEFORE going to a doctor. Disease investigation line: 610-344-6452.",
+    "lat": 39.9480, "lon": -75.6040,
+    "source": "https://www.pa211.org/agency/17130/52412/90492"
+  }
+]
