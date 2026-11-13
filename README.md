@@ -151,4 +151,4 @@ Python, Streamlit, Claude / Gemini / OpenAI (switchable), Altair, pydeck, Pillow
 ## Team
 
 - **Grace Julius:** AI engine and trust check
-- **_Partner name_:** UI, data and demo
+- **Kenya Williams:** UI, data and demo
