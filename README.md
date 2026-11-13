@@ -28,7 +28,7 @@ cp .env.example .env      # then add your API key
 streamlit run app.py
 ```
 
-Set `AI_PROVIDER` to `anthropic` or `openai` in `.env` and add the matching key. `MODEL` is optional.
+Set `AI_PROVIDER` to `gemini` (free key at [aistudio.google.com/apikey](https://aistudio.google.com/apikey)), `anthropic`, or `openai` in `.env` and add the matching key. `MODEL` is optional.
 
 ## Project structure
 

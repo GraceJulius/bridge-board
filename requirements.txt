@@ -1,4 +1,5 @@
 streamlit>=1.40
+google-genai
 anthropic
 openai
 python-dotenv

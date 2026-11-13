@@ -18,10 +18,13 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-PROVIDER = os.getenv("AI_PROVIDER", "anthropic").lower()
-MODEL = os.getenv("MODEL") or (
-    "claude-sonnet-5-5" if PROVIDER == "anthropic" else "gpt-4o-mini"
-)
+PROVIDER = os.getenv("AI_PROVIDER", "gemini").lower()
+DEFAULT_MODELS = {
+    "gemini": "gemini-flash-latest",
+    "anthropic": "claude-sonnet-5-5",
+    "openai": "gpt-4o-mini",
+}
+MODEL = os.getenv("MODEL") or DEFAULT_MODELS.get(PROVIDER, "")
 
 CATEGORIES = ["Health", "Volunteer", "Social", "Education", "Other"]
 
@@ -32,6 +35,22 @@ CATEGORIES = ["Health", "Volunteer", "Social", "Education", "Other"]
 
 def _call_llm(prompt: str, image_bytes: bytes | None = None, mime: str = "image/jpeg",
               max_tokens: int = 1200) -> str:
+    if PROVIDER == "gemini":
+        from google import genai
+        from google.genai import types
+
+        client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+        contents = []
+        if image_bytes:
+            contents.append(types.Part.from_bytes(data=image_bytes, mime_type=mime))
+        contents.append(prompt)
+        resp = client.models.generate_content(
+            model=MODEL,
+            contents=contents,
+            config=types.GenerateContentConfig(max_output_tokens=max_tokens * 2),
+        )
+        return resp.text or ""
+
     if PROVIDER == "anthropic":
         import anthropic
 
