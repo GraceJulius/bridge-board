@@ -14,12 +14,12 @@ Alex is a Lincoln student who wants to help improve the relationship between Lin
 |---|---|
 | 📸 **Flyer scan** | A vision model reads a photo of a flyer and extracts title, date, time, location, organizer and contact, with a legibility score and missing fields |
 | 🏷️ **Tag + translate** | The LLM categorizes the event (Health, Volunteer, Social, Education), writes a short summary, and translates it to Spanish |
-| 🛡️ **Health trust check** | Health claims on every flyer are compared with CDC and PA Department of Health guidance. Misleading flyers are flagged and never recommended to students |
+| 🛡️ **Trust check** | Every flyer gets two checks: health claims are compared with CDC and PA Department of Health guidance, and the flyer is scanned for scam warning signs (payment requests, hidden locations, pressure tactics, product sales). Flagged flyers are never recommended to students |
 | 📋 **Bridge Board** | All events in one filterable board with an English/Spanish toggle |
 | 🧭 **"I'm overwhelmed" mode** | The LLM groups a student's messy ideas into themes, plots them on an effort vs. impact chart, picks one action for this week, and scores the best-fit verified events |
 | ✉️ **Outreach drafter** | The LLM drafts a short, human message from the student to the event organizer |
 
-**AI pipeline:** photo ➡️ vision extraction ➡️ classify + translate + health fact-check ➡️ board ➡️ planning + matching ➡️ outreach draft
+**AI pipeline:** photo ➡️ vision extraction ➡️ classify + translate + trust check (health + scams) ➡️ board ➡️ planning + matching ➡️ outreach draft
 
 ## Run it
 

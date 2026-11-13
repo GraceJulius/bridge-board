@@ -14,7 +14,9 @@
     "trust": {
       "status": "aligned",
       "note": "Promotes MMR vaccination, which matches CDC and PA Department of Health guidance for measles prevention.",
-      "official_source": "CDC: Measles vaccination"
+      "official_source": "CDC: Measles vaccination",
+      "safety": "ok",
+      "safety_flags": []
     },
     "is_sample": true
   },
@@ -33,7 +35,12 @@
     "trust": {
       "status": "needs_review",
       "note": "Claims natural remedies replace the measles vaccine, which contradicts CDC guidance that two MMR doses are the most effective protection.",
-      "official_source": "CDC: Measles vaccination"
+      "official_source": "CDC: Measles vaccination",
+      "safety": "caution",
+      "safety_flags": [
+        "Location hidden until you RSVP",
+        "Sells an \"immunity bundle\" alongside health claims"
+      ]
     },
     "is_sample": true
   },
@@ -49,7 +56,13 @@
     "summary_en": "Help collect and sort food donations for local families ahead of Thanksgiving.",
     "summary_es": "Ayude a recolectar y clasificar donaciones de alimentos para familias locales antes del Día de Acción de Gracias.",
     "how_students_can_help": "Sign up for a 2 hour sorting shift with friends.",
-    "trust": {"status": "no_health_claims", "note": "No health claims on this flyer.", "official_source": ""},
+    "trust": {
+      "status": "no_health_claims",
+      "note": "No health claims on this flyer.",
+      "official_source": "",
+      "safety": "ok",
+      "safety_flags": []
+    },
     "is_sample": true
   },
   {
@@ -64,7 +77,13 @@
     "summary_en": "Weekly homework help for middle and high school students in math, reading, and science.",
     "summary_es": "Ayuda semanal con las tareas para estudiantes de secundaria en matemáticas, lectura y ciencias.",
     "how_students_can_help": "Lincoln students can tutor once a week in their strongest subject.",
-    "trust": {"status": "no_health_claims", "note": "No health claims on this flyer.", "official_source": ""},
+    "trust": {
+      "status": "no_health_claims",
+      "note": "No health claims on this flyer.",
+      "official_source": "",
+      "safety": "ok",
+      "safety_flags": []
+    },
     "is_sample": true
   },
   {
@@ -79,7 +98,13 @@
     "summary_en": "Board games, basketball, and food trucks open to Lincoln students and Oxford families.",
     "summary_es": "Juegos de mesa, baloncesto y camiones de comida abiertos a estudiantes de Lincoln y familias de Oxford.",
     "how_students_can_help": "Help run a game station or invite a family you met volunteering.",
-    "trust": {"status": "no_health_claims", "note": "No health claims on this flyer.", "official_source": ""},
+    "trust": {
+      "status": "no_health_claims",
+      "note": "No health claims on this flyer.",
+      "official_source": "",
+      "safety": "ok",
+      "safety_flags": []
+    },
     "is_sample": true
   }
 ]

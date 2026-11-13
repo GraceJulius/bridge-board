@@ -36,8 +36,8 @@ CATEGORY_COLORS = {
 }
 CATEGORY_ICONS = {"Health": "✚", "Volunteer": "♥", "Social": "☺", "Education": "✎", "Other": "✳"}
 TRUST_BADGES = {
-    "aligned": ("✓ Matches official guidance", "#3E7A52"),
-    "needs_review": ("⚠ Health claims need review", TERRA),
+    "verified": ("✓ Trust check passed", "#3E7A52"),
+    "flagged": ("⚠ Needs review", TERRA),
 }
 
 # ---------------------------------------------------------------------------
@@ -207,13 +207,31 @@ def outreach_box(event: dict, plan: dict | None, key: str) -> None:
 
 
 def trust_html(event: dict) -> str:
+    """Every card shows both parts of the trust check: health claims and scam/safety signals."""
     trust = event.get("trust") or {}
-    status = trust.get("status")
-    if status not in TRUST_BADGES:
-        return ""
-    cls = "ok" if status == "aligned" else "warn"
-    src = f" · Check: {esc(trust.get('official_source'))}" if trust.get("official_source") else ""
-    return f'<div class="bb-trust {cls}"><b>{TRUST_BADGES[status][0]}</b><br>{esc(trust.get("note"))}{src}</div>'
+    health = trust.get("status", "")
+    safety = trust.get("safety", "ok")
+    flags = trust.get("safety_flags") or []
+    flagged = ai.is_flagged(event)
+
+    if health == "aligned":
+        h = f"✓ <b>Health claims</b> match official guidance. {esc(trust.get('note'))}"
+    elif health == "needs_review":
+        h = f"⚠ <b>Health claims</b> conflict with official guidance. {esc(trust.get('note'))}"
+    else:
+        h = "✓ <b>Health claims</b>: none on this flyer, nothing to fact-check."
+    if trust.get("official_source") and health in ("aligned", "needs_review"):
+        h += f" <i>Source: {esc(trust['official_source'])}</i>"
+
+    if safety == "caution":
+        s = "⚠ <b>Scam signals</b>: " + "; ".join(esc(f) for f in flags) if flags else "⚠ <b>Scam signals</b> found."
+    else:
+        s = "✓ <b>Scam signals</b>: none found."
+
+    cls = "warn" if flagged else "ok"
+    title = "Trust check: needs review" if flagged else "Trust check passed"
+    return (f'<div class="bb-trust {cls}"><div class="bb-eyebrow" style="color:inherit;opacity:.8">{title}</div>'
+            f'<div style="margin-top:4px">{h}</div><div style="margin-top:4px">{s}</div></div>')
 
 
 def event_card(event: dict, lang: str = "English", key_prefix: str = "board",
@@ -221,21 +239,20 @@ def event_card(event: dict, lang: str = "English", key_prefix: str = "board",
     cat = event.get("category", "Other")
     color = CATEGORY_COLORS.get(cat, CATEGORY_COLORS["Other"])
     icon = CATEGORY_ICONS.get(cat, "✳")
-    status = (event.get("trust") or {}).get("status")
+    flagged = ai.is_flagged(event)
 
     badges = f'<span class="bb-badge" style="background:{color}">{esc(cat)}</span>'
-    if status in TRUST_BADGES:
-        label, bcolor = TRUST_BADGES[status]
-        badges += f'<span class="bb-badge" style="background:{bcolor}">{label}</span>'
+    label, bcolor = TRUST_BADGES["flagged" if flagged else "verified"]
+    badges += f'<span class="bb-badge" style="background:{bcolor}">{label}</span>'
     badges += ('<span class="bb-badge light">Sample data</span>' if event.get("is_sample")
                else '<span class="bb-badge light">📸 Scanned</span>')
 
     meta = " · ".join(esc(x) for x in [event.get("date"), event.get("time"), event.get("location")] if x)
     summary = event.get("summary_es") if lang == "Español" else event.get("summary_en")
     helps = (f'<div class="bb-help"><b>How students can help</b> · {esc(event["how_students_can_help"])}</div>'
-             if event.get("how_students_can_help") and status != "needs_review" else "")
+             if event.get("how_students_can_help") and not flagged else "")
     org = " ".join(esc(x) for x in [event.get("organizer"), event.get("contact")] if x)
-    arrow = ('<div class="bb-arrow" style="border-color:#E9B99C;color:#8A3A1A">!</div>' if status == "needs_review"
+    arrow = ('<div class="bb-arrow" style="border-color:#E9B99C;color:#8A3A1A">!</div>' if flagged
              else '<div class="bb-arrow">↗</div>')
 
     with st.container(border=True):
@@ -249,7 +266,7 @@ def event_card(event: dict, lang: str = "English", key_prefix: str = "board",
 <div class="bb-org">{org}</div>""",
             unsafe_allow_html=True,
         )
-        if show_outreach and status != "needs_review":
+        if show_outreach and not flagged:
             with st.expander("Reach out to the organizer"):
                 outreach_box(event, None, f"{key_prefix}_{event['id']}")
 
@@ -268,7 +285,7 @@ def pipeline_html(steps: list[tuple[str, str, str]]) -> str:
 # ---------------------------------------------------------------------------
 events = store.load_events()
 n_health = sum(1 for e in events if e.get("category") == "Health")
-n_flagged = sum(1 for e in events if (e.get("trust") or {}).get("status") == "needs_review")
+n_flagged = sum(1 for e in events if ai.is_flagged(e))
 
 st.markdown(
     f"""
@@ -283,13 +300,13 @@ st.markdown(
     <div>
       <span class="bb-pill green">Community, made simple</span>
       <h1>Small steps.<br>Stronger neighbors.</h1>
-      <p>Snap a local flyer and AI turns it into a verified, translated event. Feeling overwhelmed?
+      <p>Snap a local flyer and AI turns it into a trust-checked, translated event. Feeling overwhelmed?
       Tell us your ideas and we'll find your first step.</p>
     </div>
     <div class="bb-stats">
       <div class="bb-stat"><b>{len(events)}</b><span>events on the board</span></div>
       <div class="bb-stat"><b>{n_health}</b><span>health events</span></div>
-      <div class="bb-stat"><b>{n_flagged}</b><span>flagged as misleading</span></div>
+      <div class="bb-stat"><b>{n_flagged}</b><span>flagged by trust check</span></div>
     </div>
   </div>
   <div class="bb-hero-right">
@@ -297,7 +314,7 @@ st.markdown(
     <div class="bb-wordmark">BRIDGE <span class="bb-orb">🌉</span> BOARD</div>
     <div class="bb-anno" style="left:46%; top:142px;"><i></i>Read by AI vision</div>
     <div class="bb-line" style="left:58%; top:172px; height:58px;"></div>
-    <div class="bb-anno" style="left:58%; top:232px;"><i></i>Fact-checked vs. CDC guidance</div>
+    <div class="bb-anno" style="left:58%; top:232px;"><i></i>Trust checked: health + scams</div>
     <div class="bb-line" style="left:58%; top:262px; height:50px;"></div>
     <div class="bb-anno" style="left:58%; top:314px;"><i></i>Translated EN · ES</div>
     <div class="bb-line" style="left:58%; top:344px; height:30px;"></div>
@@ -309,7 +326,7 @@ st.markdown(
 <div class="bb-how">
   <div class="bb-how-card peach" style="animation-delay:.1s">
     <div><div class="bb-icon">📸</div><h4>Scan a flyer</h4>
-    <p>Photograph any flyer in town. AI reads it, translates it, and checks its health claims.</p></div>
+    <p>Photograph any flyer in town. AI reads it, translates it, and runs a trust check for health misinformation and scams.</p></div>
     <div class="bb-row"><div class="bb-tags"><span># Vision</span><span># Trust check</span></div><div class="bb-arrow fill">↗</div></div>
   </div>
   <div class="bb-how-card" style="animation-delay:.2s">
@@ -370,7 +387,7 @@ with tab_scan:
                 ("1", "Read the flyer", "Vision model pulls out title, date, place, organizer, contact"),
                 ("2", "Understand it", "Classifies the event and writes a plain-language summary"),
                 ("3", "Translate it", "English and Spanish, so every neighbor can read it"),
-                ("4", "Check health claims", "Compares claims with CDC and PA Department of Health guidance"),
+                ("4", "Trust check", "Health claims vs. CDC and PA DOH guidance, plus scam warning signs"),
                 ("5", "Post to the board", "Ready for students to find and act on"),
             ]), unsafe_allow_html=True)
 
@@ -397,13 +414,19 @@ with tab_scan:
                 steps.append(("…", "Classifying, translating, fact-checking", "One reasoning pass"))
                 trace.markdown(pipeline_html(steps), unsafe_allow_html=True)
                 event.update(ai.tag_and_translate(event))
-                status = (event.get("trust") or {}).get("status", "")
+                trust = event.get("trust") or {}
+                status = trust.get("status", "")
+                safety = trust.get("safety", "ok")
                 steps[-1] = ("✓", "Classified and translated",
                              f"{event.get('category')} · EN + ES · {time.time() - t1:.1f}s")
                 steps.append(("⚠" if status == "needs_review" else "✓", "Health claim check",
                               {"aligned": "Matches official guidance",
                                "needs_review": "Flagged: claims conflict with official guidance",
-                               "no_health_claims": "No health claims found"}.get(status, "Checked")))
+                               "no_health_claims": "No health claims to fact-check"}.get(status, "Checked")))
+                flags = trust.get("safety_flags") or []
+                steps.append(("⚠" if safety == "caution" else "✓", "Scam signal check",
+                              ("Warning signs: " + "; ".join(map(str, flags))) if safety == "caution" and flags
+                              else ("Warning signs found" if safety == "caution" else "No warning signs found")))
                 for k in ("confidence", "missing"):
                     event.pop(k, None)
                 event = store.add_event(event)
@@ -411,8 +434,8 @@ with tab_scan:
                 trace.markdown(pipeline_html(steps), unsafe_allow_html=True)
                 st.session_state["last_trace"] = steps
                 st.session_state["last_scanned"] = event
-                if status == "needs_review":
-                    st.toast("Heads up: this flyer has health claims that need review", icon="⚠️")
+                if ai.is_flagged(event):
+                    st.toast("Heads up: this flyer was flagged by the trust check", icon="⚠️")
                 else:
                     st.toast("Added to the board!", icon="✅")
             except Exception as e:

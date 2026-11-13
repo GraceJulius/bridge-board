@@ -101,6 +101,12 @@ def _parse_json(text: str) -> dict:
     return json.loads(match.group(0))
 
 
+def is_flagged(event: dict) -> bool:
+    """True if the trust check flagged health misinformation or scam warning signs."""
+    trust = event.get("trust") or {}
+    return trust.get("status") == "needs_review" or trust.get("safety") == "caution"
+
+
 # ---------------------------------------------------------------------------
 # Step 1: flyer photo -> structured event (vision)
 # ---------------------------------------------------------------------------
@@ -124,7 +130,7 @@ Only use information visible on the flyer. Use "" for anything missing. Do not g
 
 
 # ---------------------------------------------------------------------------
-# Step 2: classify, translate, and run the health trust check
+# Step 2: classify, translate, and run the trust check (health claims + scam signals)
 # ---------------------------------------------------------------------------
 
 def tag_and_translate(event: dict) -> dict:
@@ -139,18 +145,28 @@ Do three things and return ONLY a JSON object:
   "how_students_can_help": one sentence on how a college student could help or join,
   "trust": {{
     "status": "aligned" | "needs_review" | "no_health_claims",
-    "note": one sentence explaining your judgment,
-    "official_source": the most relevant official source to check, e.g. "CDC: Measles vaccination" or ""
+    "note": one sentence explaining the health judgment,
+    "official_source": the most relevant official source to check, e.g. "CDC: Measles vaccination" or "",
+    "safety": "ok" | "caution",
+    "safety_flags": [short phrases naming each warning sign found, or empty list]
   }}
 }}
 
-Rules for "trust" (this protects the community from health misinformation):
+Rules for the health check ("status"), which protects the community from health misinformation:
 - "no_health_claims" if the flyer makes no medical or health claims.
 - "aligned" only if every health claim matches established guidance from the CDC, the
   Pennsylvania Department of Health, or the Chester County Health Department.
 - "needs_review" if any claim contradicts that guidance (for example discouraging vaccines,
   or promoting unproven cures), is exaggerated, or you are not sure. When in doubt, choose needs_review.
-- Never invent claims that are not on the flyer."""
+
+Rules for the safety check ("safety"), which protects people from scams and social engineering:
+- Look for warning signs such as: asking for payment, gift cards, or wire transfers to attend or "reserve";
+  asking for SSNs, bank details, or other sensitive personal info; location hidden until you RSVP or pay;
+  pressure or urgency ("today only", "act now"); selling products alongside health or charity claims;
+  contact details that cannot be verified (no organizer name, personal email only, shortened links or QR codes
+  with no explanation); promises that sound too good to be true.
+- "caution" if one or more clear warning signs are present; otherwise "ok".
+- Never invent claims or warning signs that are not on the flyer."""
     return _parse_json(_call_llm(prompt))
 
 
@@ -163,7 +179,7 @@ def make_plan(brain_dump: str, events: list[dict]) -> dict:
         {k: e.get(k, "") for k in ("id", "title", "date", "category", "organizer",
                                     "summary_en", "how_students_can_help")}
         for e in events
-        if (e.get("trust") or {}).get("status") != "needs_review"  # never route students to flagged events
+        if not is_flagged(e)  # never route students to flagged events
     ]
     prompt = f"""A Lincoln University student wants to improve the relationship between
 Lincoln and the Oxford, PA community but feels overwhelmed. Here is their brain dump:
