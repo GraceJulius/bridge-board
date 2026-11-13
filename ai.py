@@ -9,6 +9,8 @@ Four functions, each one LLM call:
 Set AI_PROVIDER to "anthropic" or "openai" in .env, plus the matching API key.
 """
 
+from __future__ import annotations
+
 import base64
 import json
 import os

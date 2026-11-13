@@ -3,6 +3,8 @@
 Run:  streamlit run app.py
 """
 
+from __future__ import annotations
+
 import streamlit as st
 
 import ai
