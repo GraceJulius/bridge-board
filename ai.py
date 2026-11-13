@@ -105,17 +105,52 @@ def _call_llm(prompt: str, image_bytes: bytes | None = None, mime: str = "image/
 
 
 def _parse_json(text: str) -> dict:
-    """Pull the first JSON object out of a model reply, even if wrapped in ``` fences."""
-    match = re.search(r"\{.*\}", text, re.DOTALL)
-    if not match:
-        raise ValueError(f"Model did not return JSON:\n{text[:500]}")
-    return json.loads(match.group(0))
+    """Pull the JSON object out of a model reply and repair common mistakes.
+
+    Handles ``` fences, text before/after the JSON, trailing commas, // comments,
+    and smart quotes. Raises ValueError if it still can't be read.
+    """
+    t = (text or "").strip()
+    t = re.sub(r"^```(?:json)?\s*|\s*```$", "", t, flags=re.IGNORECASE | re.MULTILINE)
+    start = t.find("{")
+    if start == -1:
+        raise ValueError(f"Model did not return JSON:\n{t[:300]}")
+    t = t[start:]
+    candidates = [t]
+    fixed = t.replace("\u201c", '"').replace("\u201d", '"')
+    fixed = re.sub(r"//[^\n\"]*$", "", fixed, flags=re.MULTILINE)   # // comments at line end
+    fixed = re.sub(r",\s*([}\]])", r"\1", fixed)                    # trailing commas
+    candidates.append(fixed)
+    for c in candidates:
+        try:
+            obj, _ = json.JSONDecoder().raw_decode(c)  # ignores anything after the object
+            if isinstance(obj, dict):
+                return obj
+        except json.JSONDecodeError:
+            continue
+    raise ValueError("invalid JSON")
 
 
 def is_flagged(event: dict) -> bool:
     """True if the trust check flagged health misinformation or scam warning signs."""
     trust = event.get("trust") or {}
     return trust.get("status") == "needs_review" or trust.get("safety") == "caution"
+
+
+JSON_RULES = ("\n\nReturn ONLY valid JSON: double quotes, no comments, no trailing commas, "
+              "no text before or after. Escape any double quotes inside strings. Keep strings short.")
+
+
+def _llm_json(prompt: str, image_bytes: bytes | None = None, mime: str = "image/jpeg",
+              max_tokens: int = 2000) -> dict:
+    """Call the model for JSON. If the reply can't be parsed, retry once with a stricter reminder."""
+    reply = _call_llm(prompt + JSON_RULES, image_bytes, mime, max_tokens=max_tokens)
+    try:
+        return _parse_json(reply)
+    except ValueError:
+        retry = (prompt + JSON_RULES + "\n\nYour previous reply was not valid JSON or was cut off. "
+                 "Answer again, more briefly, as one complete valid JSON object.")
+        return _parse_json(_call_llm(retry, image_bytes, mime, max_tokens=max_tokens + 1000))
 
 
 # ---------------------------------------------------------------------------
@@ -137,7 +172,7 @@ Extract the event details. Return ONLY a JSON object with these keys:
   "missing": list of field names you could not find on the flyer
 }
 Only use information visible on the flyer. Use "" for anything missing. Do not guess."""
-    return _parse_json(_call_llm(prompt, image_bytes, mime))
+    return _llm_json(prompt, image_bytes, mime)
 
 
 # ---------------------------------------------------------------------------
@@ -179,7 +214,7 @@ Rules for the safety check ("safety"), which protects people from scams and soci
   with no explanation); promises that sound too good to be true.
 - "caution" if one or more clear warning signs are present; otherwise "ok".
 - Never invent claims or warning signs that are not on the flyer."""
-    return _parse_json(_call_llm(prompt))
+    return _llm_json(prompt)
 
 
 # ---------------------------------------------------------------------------
@@ -205,20 +240,24 @@ Help them get unstuck. Return ONLY a JSON object:
 {{
   "themes": [2 to 4 short themes you hear in their ideas],
   "ranked_ideas": [
-    {{"idea": short label (max 6 words), "effort": 1-5, "impact": 1-5, "why": one sentence}}
+    {{"idea": short label (max 6 words), "effort": integer 1 to 5, "impact": integer 1 to 5, "why": one short sentence}}
   ],
   "this_week": one concrete action they can take in the next 7 days,
   "matches": [
-    {{"event_id": id from the board, "fit": 0-100, "reason": one sentence tying the event to their ideas}}
+    {{"event_id": id from the board, "fit": integer 0 to 100, "reason": one short sentence tying the event to their ideas}}
   ],
   "encouragement": one short, warm, genuine sentence (no cliches)
 }}
 - ranked_ideas: every distinct idea from the brain dump (3 to 6), best impact for least effort first.
 - matches: the top 3 board events for this student, best first. Only use ids that exist.
 - Keep the plan small and doable."""
-    plan = _parse_json(_call_llm(prompt, max_tokens=1800))
+    plan = _llm_json(prompt, max_tokens=3000)
     valid = {e["id"] for e in board}
-    plan["matches"] = [m for m in plan.get("matches", []) if m.get("event_id") in valid]
+    plan["matches"] = [m for m in (plan.get("matches") or [])
+                       if isinstance(m, dict) and m.get("event_id") in valid]
+    plan["ranked_ideas"] = [i for i in (plan.get("ranked_ideas") or []) if isinstance(i, dict)]
+    themes = plan.get("themes") or []
+    plan["themes"] = [str(t) for t in themes] if isinstance(themes, list) else [str(themes)]
     return plan
 
 
@@ -271,7 +310,7 @@ Write a short, kind, shareable fact-check card for neighbors. Do not mock anyone
   "bottom_line_es": the same in Spanish
 }}
 Use only well-established public health facts. 1 to 3 claims."""
-    return _parse_json(_call_llm(prompt, max_tokens=1500))
+    return _llm_json(prompt, max_tokens=2500)
 
 
 # ---------------------------------------------------------------------------
@@ -357,7 +396,7 @@ Return ONLY JSON:
   "info": questions, vaccines, or prevention.
 - If thoughts of suicide or self-harm are mentioned, level "emergency" and recommend "988" and "911".
 - When in doubt, choose the more cautious level."""
-    out = _parse_json(_call_llm(prompt, max_tokens=700))
+    out = _llm_json(prompt, max_tokens=1200)
     valid = {r["id"] for r in resources}
     out["recommend"] = [r for r in out.get("recommend", []) if r in valid] or ["lu_health"]
     if out.get("level") == "emergency" and "911" not in out["recommend"]:
